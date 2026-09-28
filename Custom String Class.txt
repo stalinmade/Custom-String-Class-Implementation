@@ -1,6 +1,9 @@
 /*----------------Custom String Class Implementation in Modern C++--------------------*/
+
 #include <iostream>
 #include <string.h>
+#include <fstream>
+
 using namespace std;
 
 class String
@@ -12,9 +15,10 @@ public:
     // Default constructor
     String()
     {
-        p = new char[100];
+        p = new char[1];
         p[0] = '\0';
     }
+
 
     // Parameterized constructor
     String(const char *s)
@@ -23,6 +27,60 @@ public:
         strcpy(p, s);
     }
 
+
+    // Input constructor
+    String(int)
+    {
+        char ch;
+        int count = 0;
+
+        ofstream fout("string.dat");
+
+        if(!fout)
+        {
+            cout << "File opening failed" << endl;
+
+            p = new char[1];
+            p[0] = '\0';
+
+            return;
+        }
+
+        cout << "Enter a string: ";
+
+        while(1)
+        {
+            ch = cin.get();
+
+            if(ch == '\n')
+                break;
+
+            fout.put(ch);
+            count++;
+        }
+
+        fout.close();
+
+        // Allocate exact memory
+        p = new char[count + 1];
+
+        // Read characters from file
+        ifstream fin("string.dat");
+
+        int i = 0;
+
+        while(fin.get(ch))
+        {
+            p[i] = ch;
+            i++;
+        }
+
+        p[i] = '\0';
+
+        fin.close();
+    }
+
+
     // Copy constructor
     String(const String &s)
     {
@@ -30,20 +88,66 @@ public:
         strcpy(p, s.p);
     }
 
+
     void setdata()
     {
-        cin.getline(p, 100);
+        char ch;
+        int count = 0;
+
+        ofstream fout("string.dat");
+
+        if(!fout)
+        {
+            cout << "File opening failed" << endl;
+            return;
+        }
+
+        cout << "Enter a string: ";
+
+        while(1)
+        {
+            ch = cin.get();
+
+            if(ch == '\n')
+                break;
+
+            fout.put(ch);
+            count++;
+        }
+
+        fout.close();
+
+        delete [] p;
+
+        p = new char[count + 1];
+
+        ifstream fin("string.dat");
+
+        int i = 0;
+
+        while(fin.get(ch))
+        {
+            p[i] = ch;
+            i++;
+        }
+
+        p[i] = '\0';
+
+        fin.close();
     }
+
 
     void getdata()
     {
         cout << "Data: " << p << endl;
     }
 
+
     ~String()
     {
         delete [] p;
     }
+
 
     // Assignment operator
     String &operator=(const String &t)
@@ -59,6 +163,7 @@ public:
         return *this;
     }
 
+
     // Assignment from C-string
     String &operator=(const char *s)
     {
@@ -69,6 +174,7 @@ public:
 
         return *this;
     }
+
 
     // + operator
     String operator+(const String &t)
@@ -85,11 +191,13 @@ public:
         return a;
     }
 
+
     // [] operator
     char &operator[](int i)
     {
         return p[i];
     }
+
 
     // Comparison operators
     bool operator<(const String &s)
@@ -97,37 +205,43 @@ public:
         return strcmp(p, s.p) < 0;
     }
 
+
     bool operator>(const String &s)
     {
         return strcmp(p, s.p) > 0;
     }
+
 
     bool operator==(const String &s)
     {
         return strcmp(p, s.p) == 0;
     }
 
+
     bool operator!=(const String &s)
     {
         return strcmp(p, s.p) != 0;
     }
+
 
     bool operator>=(const String &s)
     {
         return strcmp(p, s.p) >= 0;
     }
 
+
     bool operator<=(const String &s)
     {
         return strcmp(p, s.p) <= 0;
     }
+
 
     friend ostream &operator<<(ostream &, const String &);
     friend istream &operator>>(istream &, String &);
 
     friend void Strcpy(String &, String &);
     friend String &Strncpy(String &, String &, int);
-    friend int Strcmp(String &, String &);
+    friend bool Strcmp(String &, String &);
     friend int Strncmp(String &, String &, int);
     friend String Strcat(String &, const String &);
     friend String &Strncat(String &, const String &, int);
@@ -276,16 +390,29 @@ void Strrev(String &s)
 // strncat
 String &Strncat(String &s, const String &d, int n)
 {
-    int a = strlen(s.p);
+    int len1 = strlen(s.p);
+    int len2 = strlen(d.p);
+
+    if(n > len2)
+        n = len2;
+
+    char *temp = new char[len1 + n + 1];
+
+    strcpy(temp, s.p);
+
     int i = 0;
 
-    while(i < n && d.p[i])
+    while(i < n)
     {
-        s.p[a + i] = d.p[i];
+        temp[len1 + i] = d.p[i];
         i++;
     }
 
-    s.p[a + i] = '\0';
+    temp[len1 + i] = '\0';
+
+    delete [] s.p;
+
+    s.p = temp;
 
     return s;
 }
@@ -299,19 +426,24 @@ String Strcat(String &s, const String &d)
 
 
 // strcmp
-int Strcmp(String &s, String &d)
+// Returns true if both strings are same
+// Returns false if strings are different
+bool Strcmp(String &s, String &d)
 {
     int i = 0;
 
     while(s.p[i] != '\0' && d.p[i] != '\0')
     {
         if(s.p[i] != d.p[i])
-            return s.p[i] - d.p[i];
+            return false;
 
         i++;
     }
 
-    return s.p[i] - d.p[i];
+    if(s.p[i] == '\0' && d.p[i] == '\0')
+        return true;
+
+    return false;
 }
 
 
@@ -320,9 +452,7 @@ int Strncmp(String &s, String &d, int n)
 {
     int i = 0;
 
-    while(s.p[i] != '\0' &&
-          d.p[i] != '\0' &&
-          i < n)
+    while(i < n && s.p[i] != '\0' && d.p[i] != '\0')
     {
         if(s.p[i] != d.p[i])
             return s.p[i] - d.p[i];
@@ -376,7 +506,44 @@ ostream &operator<<(ostream &out, const String &t)
 // >> operator
 istream &operator>>(istream &in, String &t)
 {
-    in.getline(t.p, 100);
+    char ch;
+    int count = 0;
+
+    ofstream fout("string.dat");
+
+    if(!fout)
+        return in;
+
+    while(1)
+    {
+        ch = in.get();
+
+        if(ch == '\n')
+            break;
+
+        fout.put(ch);
+        count++;
+    }
+
+    fout.close();
+
+    delete [] t.p;
+
+    t.p = new char[count + 1];
+
+    ifstream fin("string.dat");
+
+    int i = 0;
+
+    while(fin.get(ch))
+    {
+        t.p[i] = ch;
+        i++;
+    }
+
+    t.p[i] = '\0';
+
+    fin.close();
 
     return in;
 }
@@ -473,8 +640,10 @@ int main()
 
     cout << "\n===== Strcmp =====" << endl;
 
-    cout << "Strcmp(s1,s2) = "
-         << Strcmp(s1, s2) << endl;
+    if(Strcmp(s1, s2))
+        cout << "Same" << endl;
+    else
+        cout << "Not Same" << endl;
 
 
     cout << "\n===== Strncmp =====" << endl;
@@ -570,13 +739,9 @@ int main()
         cout << "Substring not found" << endl;
 
 
-    cout << "\n===== setdata() / getdata() =====" << endl;
+    cout << "\n===== Character-by-Character Input =====" << endl;
 
-    String s17;
-
-    cout << "Enter a string: ";
-
-    s17.setdata();
+    String s17(1);
 
     cout << "Entered string: ";
     s17.getdata();
